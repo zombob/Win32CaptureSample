@@ -70,9 +70,9 @@ IAsyncAction App::StartCaptureAsync()
 
     if (item != nullptr)
     {
-        m_capture = std::make_unique<SimpleCapture>(m_device, item);
+        m_capture = std::make_unique<SimpleCapture>(m_compositor, m_device, item);
 
-        auto surface = m_capture->CreateSurface(m_compositor);
+        auto surface = m_capture->GetSurface();
         m_brush.Surface(surface);
 
         m_capture->StartCapture();

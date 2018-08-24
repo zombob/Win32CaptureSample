@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "SimpleCapture.h"
+#include "composition.interop.h"
 
 using namespace winrt;
 
@@ -15,21 +16,24 @@ using namespace Windows::UI;
 using namespace Windows::UI::Composition;
 
 SimpleCapture::SimpleCapture(
+    Compositor const& compositor,
     IDirect3DDevice const& device,
     GraphicsCaptureItem const& item)
 {
+    m_compositor = compositor;
     m_item = item;
     m_device = device;
 
     auto d3dDevice = GetDXGIInterfaceFromObject<ID3D11Device>(m_device);
     d3dDevice->GetImmediateContext(m_d3dContext.put());
+    m_multithread = m_d3dContext.as<ID3D11Multithread>();
 
-    m_swapChain = CreateDXGISwapChain(
-        d3dDevice, 
-        (uint32_t)m_item.Size().Width, 
-        (uint32_t)m_item.Size().Height,
-        static_cast<DXGI_FORMAT>(DirectXPixelFormat::B8G8R8A8UIntNormalized),
-        2);
+    m_compositionGraphics = CreateCompositionGraphicsDevice(m_compositor, d3dDevice.get());
+
+    m_surface = m_compositionGraphics.CreateDrawingSurface2(
+        m_item.Size(),
+        DirectXPixelFormat::B8G8R8A8UIntNormalized,
+        DirectXAlphaMode::Premultiplied);
 
     m_framePool = Direct3D11CaptureFramePool::Create(
         m_device,
@@ -49,11 +53,10 @@ void SimpleCapture::StartCapture()
     m_session.StartCapture();
 }
 
-ICompositionSurface SimpleCapture::CreateSurface(
-    Compositor const& compositor)
+ICompositionSurface SimpleCapture::GetSurface()
 {
     CheckClosed();
-    return CreateCompositionSurfaceForSwapChain(compositor, m_swapChain.get());
+    return m_surface;
 }
 
 void SimpleCapture::Close()
@@ -64,7 +67,7 @@ void SimpleCapture::Close()
         m_session.Close();
         m_framePool.Close();
 
-        m_swapChain = nullptr;
+        m_surface = nullptr;
         m_framePool = nullptr;
         m_session = nullptr;
         m_item = nullptr;
@@ -88,26 +91,24 @@ void SimpleCapture::OnFrameArrived(
             // After we do that, retire the frame and then recreate our frame pool.
             newSize = true;
             m_lastSize = frame.ContentSize();
-            m_swapChain->ResizeBuffers(
-                2, 
-                (uint32_t)m_lastSize.Width, 
-                (uint32_t)m_lastSize.Height, 
-                static_cast<DXGI_FORMAT>(DirectXPixelFormat::B8G8R8A8UIntNormalized), 
-                0);
+            ResizeSurface(m_surface, m_lastSize);
         }
 
         {
             auto frameSurface = GetDXGIInterfaceFromObject<ID3D11Texture2D>(frame.Surface());
             
-            com_ptr<ID3D11Texture2D> backBuffer;
-            check_hresult(m_swapChain->GetBuffer(0, guid_of<ID3D11Texture2D>(), backBuffer.put_void()));
+            POINT point = {};
+            auto dxgiSurface = SurfaceBeginDraw(m_surface, &point);
+            auto buffer = dxgiSurface.as<ID3D11Texture2D>();
 
-            m_d3dContext->CopyResource(backBuffer.get(), frameSurface.get());
+            {
+                auto lock = D3D11DeviceLock(m_multithread.get());
+                m_d3dContext->CopySubresourceRegion(buffer.get(), 0, point.x, point.y, 0, frameSurface.get(), 0, NULL);
+            }        
+
+            SurfaceEndDraw(m_surface);
         }
     }
-
-    DXGI_PRESENT_PARAMETERS presentParameters = { 0 };
-    m_swapChain->Present1(1, 0, &presentParameters);
 
     if (newSize)
     {

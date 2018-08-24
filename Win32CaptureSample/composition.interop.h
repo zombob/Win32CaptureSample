@@ -27,6 +27,17 @@ inline void ResizeSurface(
     winrt::check_hresult(surfaceInterop->Resize(newSize));
 }
 
+inline void ResizeSurface(
+    winrt::Windows::UI::Composition::CompositionDrawingSurface const& surface,
+    winrt::Windows::Graphics::SizeInt32 const& size)
+{
+    auto surfaceInterop = surface.as<ABI::Windows::UI::Composition::ICompositionDrawingSurfaceInterop>();
+    SIZE newSize = {};
+    newSize.cx = static_cast<LONG>(size.Width);
+    newSize.cy = static_cast<LONG>(size.Height);
+    winrt::check_hresult(surfaceInterop->Resize(newSize));
+}
+
 inline auto SurfaceBeginDraw(
     winrt::Windows::UI::Composition::CompositionDrawingSurface const& surface)
 {
@@ -36,6 +47,16 @@ inline auto SurfaceBeginDraw(
     winrt::check_hresult(surfaceInterop->BeginDraw(nullptr, __uuidof(ID2D1DeviceContext), context.put_void(), &offset));
     context->SetTransform(D2D1::Matrix3x2F::Translation(offset.x, offset.y));
     return context;
+}
+
+inline auto SurfaceBeginDraw(
+    winrt::Windows::UI::Composition::CompositionDrawingSurface const& surface,
+    POINT* offset)
+{
+    auto surfaceInterop = surface.as<ABI::Windows::UI::Composition::ICompositionDrawingSurfaceInterop>();
+    winrt::com_ptr<IDXGISurface1> dxgiSurface;
+    winrt::check_hresult(surfaceInterop->BeginDraw(nullptr, __uuidof(IDXGISurface1), dxgiSurface.put_void(), offset));
+    return dxgiSurface;
 }
 
 inline void SurfaceEndDraw(
