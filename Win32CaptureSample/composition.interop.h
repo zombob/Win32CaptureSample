@@ -38,6 +38,16 @@ inline auto SurfaceBeginDraw(
     return context;
 }
 
+inline auto SurfaceBeginDraw(
+	winrt::Windows::UI::Composition::CompositionDrawingSurface const& surface,
+	POINT* offset)
+{
+	auto surfaceInterop = surface.as<ABI::Windows::UI::Composition::ICompositionDrawingSurfaceInterop>();
+	winrt::com_ptr<IDXGISurface1> dxgiSurface;
+	winrt::check_hresult(surfaceInterop->BeginDraw(nullptr, __uuidof(IDXGISurface1), dxgiSurface.put_void(), offset));
+	return dxgiSurface;
+}
+
 inline void SurfaceEndDraw(
     winrt::Windows::UI::Composition::CompositionDrawingSurface const& surface)
 {

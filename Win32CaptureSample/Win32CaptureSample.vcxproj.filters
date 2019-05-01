@@ -5,6 +5,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="App.cpp" />
     <ClCompile Include="SimpleCapture.cpp" />
+    <ClCompile Include="Snapshot.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -15,5 +16,7 @@
     <ClInclude Include="SimpleCapture.h" />
     <ClInclude Include="Win32WindowEnumeration.h" />
     <ClInclude Include="capture.interop.h" />
+    <ClInclude Include="Window.h" />
+    <ClInclude Include="Snapshot.h" />
   </ItemGroup>
 </Project>

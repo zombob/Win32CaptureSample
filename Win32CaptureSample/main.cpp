@@ -3,6 +3,7 @@
 #include "SimpleCapture.h"
 #include <ShObjIdl.h>
 #include "Win32WindowEnumeration.h"
+#include <Windowsx.h>
 
 using namespace winrt;
 using namespace Windows::UI;
@@ -41,14 +42,13 @@ int CALLBACK WinMain(
     LPSTR     cmdLine,
     int       cmdShow);
 
-auto g_app = std::make_shared<App>();
-auto g_windows = EnumerateWindows();
-
 LRESULT CALLBACK WndProc(
     HWND   hwnd,
     UINT   msg,
     WPARAM wParam,
     LPARAM lParam);
+
+auto g_app = std::make_shared<App>();
 
 int CALLBACK WinMain(
     HINSTANCE instance,
@@ -91,27 +91,8 @@ int CALLBACK WinMain(
     ShowWindow(hwnd, cmdShow);
     UpdateWindow(hwnd);
 
-    // Create combo box
-    HWND comboBoxHwnd = CreateWindow(
-        WC_COMBOBOX,
-        L"",
-        CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE,
-        10,
-        10,
-        200,
-        200,
-        hwnd,
-        NULL,
-        instance,
-        NULL);
-    WINRT_VERIFY(comboBoxHwnd);
-
-    // Populate combo box
-    for (auto& window : g_windows)
-    {
-        SendMessage(comboBoxHwnd, CB_ADDSTRING, 0, (LPARAM)window.Title().c_str());
-    }
-    //SendMessage(comboBoxHwnd, CB_SETCURSEL, 0, 0);
+    // Get all the windows
+	auto windows = EnumerateWindows();
 
     // Create a DispatcherQueue for our thread
     auto controller = CreateDispatcherQueueController();
@@ -127,7 +108,7 @@ int CALLBACK WinMain(
     auto queue = controller.DispatcherQueue();
     auto success = queue.TryEnqueue([=]() -> void
     {
-        g_app->Initialize(root);
+		g_app->Initialize(windows, root);
     });
     WINRT_VERIFY(success);
 
@@ -153,14 +134,19 @@ LRESULT CALLBACK WndProc(
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
-    case WM_COMMAND:
-        if (HIWORD(wParam) == CBN_SELCHANGE)
-        {
-            auto index = SendMessage((HWND)lParam, CB_GETCURSEL, 0, 0);
-            auto window = g_windows[index];
-            g_app->StartCapture(window.Hwnd());
-        }
-        break;
+	case WM_LBUTTONUP:
+		{
+			auto rawX = GET_X_LPARAM(lParam);
+			auto rawY = GET_Y_LPARAM(lParam);
+
+			RECT rect = {};
+			WINRT_VERIFY(GetClientRect(hwnd, &rect));
+			auto windowWidth = (float)(rect.right - rect.left);
+			auto windowHeight = (float)(rect.bottom - rect.top);
+
+			g_app->OnClick({ rawX / windowWidth, rawY / windowHeight });
+		}
+		break;
     default:
         return DefWindowProc(hwnd, msg, wParam, lParam);
         break;
