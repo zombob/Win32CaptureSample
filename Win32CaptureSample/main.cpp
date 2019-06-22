@@ -29,7 +29,7 @@ int CALLBACK WinMain(
     int       cmdShow)
 {
     // Initialize COM
-	init_apartment(apartment_type::single_threaded);
+    init_apartment(apartment_type::single_threaded);
 
     // Check to see that capture is supported
     auto isCaptureSupported = winrt::Windows::Graphics::Capture::GraphicsCaptureSession::IsSupported();
@@ -78,7 +78,7 @@ int CALLBACK WinMain(
     UpdateWindow(hwnd);
 
     // Get all the windows
-	auto windows = EnumerateWindows();
+    auto windows = EnumerateWindows();
 
     // Create a DispatcherQueue for our thread
     auto controller = CreateDispatcherQueueControllerForCurrentThread();
@@ -96,7 +96,7 @@ int CALLBACK WinMain(
     auto queue = controller.DispatcherQueue();
     auto success = queue.TryEnqueue([=]() -> void
     {
-		g_app->Initialize(windows, root);
+        g_app->Initialize(windows, root);
     });
     WINRT_VERIFY(success);
 
@@ -122,19 +122,19 @@ LRESULT CALLBACK WndProc(
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
-	case WM_LBUTTONUP:
-		{
-			auto rawX = GET_X_LPARAM(lParam);
-			auto rawY = GET_Y_LPARAM(lParam);
+    case WM_LBUTTONUP:
+        {
+            auto rawX = GET_X_LPARAM(lParam);
+            auto rawY = GET_Y_LPARAM(lParam);
 
-			RECT rect = {};
-			WINRT_VERIFY(GetClientRect(hwnd, &rect));
-			auto windowWidth = (float)(rect.right - rect.left);
-			auto windowHeight = (float)(rect.bottom - rect.top);
+            RECT rect = {};
+            WINRT_VERIFY(GetClientRect(hwnd, &rect));
+            auto windowWidth = (float)(rect.right - rect.left);
+            auto windowHeight = (float)(rect.bottom - rect.top);
 
-			g_app->OnClick({ rawX / windowWidth, rawY / windowHeight });
-		}
-		break;
+            g_app->OnClick({ rawX / windowWidth, rawY / windowHeight });
+        }
+        break;
     default:
         return DefWindowProc(hwnd, msg, wParam, lParam);
         break;
