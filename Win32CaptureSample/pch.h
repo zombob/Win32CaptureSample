@@ -33,3 +33,4 @@
 #include "d3dHelpers.h"
 #include "direct3d11.interop.h"
 #include "capture.interop.h"
+#include "dispatcherqueue.interop.h"

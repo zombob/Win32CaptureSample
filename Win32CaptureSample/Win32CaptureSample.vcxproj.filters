@@ -18,5 +18,6 @@
     <ClInclude Include="capture.interop.h" />
     <ClInclude Include="Window.h" />
     <ClInclude Include="Snapshot.h" />
+    <ClInclude Include="dispatcherqueue.interop.h" />
   </ItemGroup>
 </Project>

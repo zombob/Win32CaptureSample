@@ -1,40 +1,12 @@
 #include "pch.h"
 #include "App.h"
 #include "SimpleCapture.h"
-#include <ShObjIdl.h>
 #include "Win32WindowEnumeration.h"
 #include <Windowsx.h>
 
 using namespace winrt;
 using namespace Windows::UI;
 using namespace Windows::UI::Composition;
-using namespace Windows::UI::Composition::Desktop;
-
-auto CreateDispatcherQueueController()
-{
-    namespace abi = ABI::Windows::System;
-
-    DispatcherQueueOptions options
-    {
-        sizeof(DispatcherQueueOptions),
-        DQTYPE_THREAD_CURRENT,
-        DQTAT_COM_STA
-    };
-
-    Windows::System::DispatcherQueueController controller{ nullptr };
-    check_hresult(CreateDispatcherQueueController(options, reinterpret_cast<abi::IDispatcherQueueController**>(put_abi(controller))));
-    return controller;
-}
-
-DesktopWindowTarget CreateDesktopWindowTarget(Compositor const& compositor, HWND window)
-{
-    namespace abi = ABI::Windows::UI::Composition::Desktop;
-
-    auto interop = compositor.as<abi::ICompositorDesktopInterop>();
-    DesktopWindowTarget target{ nullptr };
-    check_hresult(interop->CreateDesktopWindowTarget(window, true, reinterpret_cast<abi::IDesktopWindowTarget**>(put_abi(target))));
-    return target;
-}
 
 int CALLBACK WinMain(
     HINSTANCE instance,
@@ -56,7 +28,21 @@ int CALLBACK WinMain(
     LPSTR     cmdLine,
     int       cmdShow)
 {
+    // Initialize COM
 	init_apartment(apartment_type::single_threaded);
+
+    // Check to see that capture is supported
+    auto isCaptureSupported = winrt::Windows::Graphics::Capture::GraphicsCaptureSession::IsSupported();
+    if (!isCaptureSupported)
+    {
+        MessageBox(
+            NULL,
+            L"Screen capture is not supported on this device for this release of Windows!",
+            L"Win32CaptureSample",
+            MB_OK | MB_ICONERROR);
+
+        return 1;
+    }
 
     // Create the window
     WNDCLASSEX wcex = {};
@@ -95,14 +81,16 @@ int CALLBACK WinMain(
 	auto windows = EnumerateWindows();
 
     // Create a DispatcherQueue for our thread
-    auto controller = CreateDispatcherQueueController();
+    auto controller = CreateDispatcherQueueControllerForCurrentThread();
 
     // Initialize Composition
     auto compositor = Compositor();
-    auto target = CreateDesktopWindowTarget(compositor, hwnd);
+    auto target = CreateDesktopWindowTarget(compositor, hwnd, true);
     auto root = compositor.CreateContainerVisual();
     root.RelativeSizeAdjustment({ 1.0f, 1.0f });
     target.Root(root);
+
+    auto picker = CreateCapturePickerForHwnd(hwnd);
 
     // Enqueue our capture work on the dispatcher
     auto queue = controller.DispatcherQueue();
