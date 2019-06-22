@@ -1,5 +1,8 @@
 #pragma once
 
+#include <Unknwn.h>
+#include <inspectable.h>
+
 // WinRT
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.System.h>
@@ -28,3 +31,5 @@
 #include "composition.interop.h"
 #include "d3dHelpers.h"
 #include "direct3d11.interop.h"
+#include "capture.interop.h"
+#include "dispatcherqueue.interop.h"
