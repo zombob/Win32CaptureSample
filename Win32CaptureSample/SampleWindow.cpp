@@ -118,6 +118,11 @@ LRESULT SampleWindow::MessageHandler(UINT const message, WPARAM const wparam, LP
                     auto value = SendMessageW(m_captureExcludeCheckBoxHwnd, BM_GETCHECK, 0, 0) == BST_CHECKED;
                     winrt::check_bool(SetWindowDisplayAffinity(m_window, value ? WDA_EXCLUDEFROMCAPTURE : WDA_NONE));
                 }
+                else if (hwnd == m_borderRequiredCheckBoxHwnd)
+                {
+                    auto value = SendMessageW(m_borderRequiredCheckBoxHwnd, BM_GETCHECK, 0, 0) == BST_CHECKED;
+                    m_app->IsBorderRequired(value);
+                }
             }
             break;
         }
@@ -162,6 +167,7 @@ void SampleWindow::OnCaptureStarted(winrt::GraphicsCaptureItem const& item, Capt
         break;
     }
     SendMessageW(m_cursorCheckBoxHwnd, BM_SETCHECK, BST_CHECKED, 0);
+    SendMessageW(m_borderRequiredCheckBoxHwnd, BM_SETCHECK, BST_CHECKED, 0);
     EnableWindow(m_stopButtonHwnd, true);
     EnableWindow(m_snapshotButtonHwnd, true);
 }
@@ -198,6 +204,10 @@ void SampleWindow::CreateControls(HINSTANCE instance)
 
     // Window exclusion
     auto isWin32CaptureExcludePresent = winrt::Windows::Foundation::Metadata::ApiInformation::IsApiContractPresent(L"Windows.Foundation.UniversalApiContract", 9);
+
+    // Border configuration
+    auto isBorderRequiredPresent = winrt::Windows::Foundation::Metadata::ApiInformation::IsPropertyPresent(L"Windows.Graphics.Capture.GraphicsCaptureSession", L"IsBorderRequired");
+    auto borderEnableSytle = isBorderRequiredPresent ? 0 : WS_DISABLED;
 
     auto controls = StackPanel(m_window, instance, 10, 10, 200);
 
@@ -256,6 +266,15 @@ void SampleWindow::CreateControls(HINSTANCE instance)
     // The default state is false for capture exclusion
     SendMessageW(captureExcludeCheckBoxHwnd, BM_SETCHECK, BST_UNCHECKED, 0);
 
+    // Border required checkbox
+    HWND borderRequiredCheckBoxHwnd = CreateWindowW(WC_BUTTON, L"Border required",
+        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX | borderEnableSytle,
+        10, 320, 200, 30, m_window, nullptr, instance, nullptr);
+    WINRT_VERIFY(borderRequiredCheckBoxHwnd);
+
+    // The default state is false for border required checkbox
+    SendMessageW(borderRequiredCheckBoxHwnd, BM_SETCHECK, BST_CHECKED, 0);
+
     m_windowComboBoxHwnd = windowComboBoxHwnd;
     m_monitorComboBoxHwnd = monitorComboBoxHwnd;
     m_pickerButtonHwnd = pickerButtonHwnd;
@@ -264,6 +283,7 @@ void SampleWindow::CreateControls(HINSTANCE instance)
     m_cursorCheckBoxHwnd = cursorCheckBoxHwnd;
     m_captureExcludeCheckBoxHwnd = captureExcludeCheckBoxHwnd;
     m_pixelFormatComboBoxHwnd = pixelFormatComboBox;
+    m_borderRequiredCheckBoxHwnd = borderRequiredCheckBoxHwnd;
 }
 
 void SampleWindow::SetSubTitle(std::wstring const& text)
@@ -283,6 +303,7 @@ void SampleWindow::StopCapture()
     SendMessageW(m_windowComboBoxHwnd, CB_SETCURSEL, -1, 0);
     SendMessageW(m_monitorComboBoxHwnd, CB_SETCURSEL, -1, 0);
     SendMessageW(m_cursorCheckBoxHwnd, BM_SETCHECK, BST_CHECKED, 0);
+    SendMessageW(m_borderRequiredCheckBoxHwnd, BM_SETCHECK, BST_CHECKED, 0);
     EnableWindow(m_stopButtonHwnd, false);
     EnableWindow(m_snapshotButtonHwnd, false);
 }

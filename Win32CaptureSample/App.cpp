@@ -188,6 +188,24 @@ void App::IsCursorEnabled(bool value)
     }
 }
 
+bool App::IsBorderRequired()
+{
+    if (m_capture != nullptr)
+    {
+        return m_capture->IsBorderRequired();
+    }
+    return false;
+}
+
+void App::IsBorderRequired(bool value)
+{
+    if (m_capture != nullptr)
+    {
+        auto ignored = winrt::GraphicsCaptureAccess::RequestAccessAsync(winrt::GraphicsCaptureAccessKind::Borderless).get();
+        m_capture->IsBorderRequired(value);
+    }
+}
+
 void App::PixelFormat(winrt::DirectXPixelFormat pixelFormat)
 {
     m_pixelFormat = pixelFormat;

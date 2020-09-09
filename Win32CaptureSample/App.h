@@ -19,6 +19,8 @@ public:
 
     bool IsCursorEnabled();
     void IsCursorEnabled(bool value);
+    bool IsBorderRequired();
+    void IsBorderRequired(bool value);
 
     void StopCapture();
 
