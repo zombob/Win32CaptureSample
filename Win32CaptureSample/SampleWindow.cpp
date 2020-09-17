@@ -267,10 +267,7 @@ void SampleWindow::CreateControls(HINSTANCE instance)
     SendMessageW(captureExcludeCheckBoxHwnd, BM_SETCHECK, BST_UNCHECKED, 0);
 
     // Border required checkbox
-    HWND borderRequiredCheckBoxHwnd = CreateWindowW(WC_BUTTON, L"Border required",
-        WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX | borderEnableSytle,
-        10, 320, 200, 30, m_window, nullptr, instance, nullptr);
-    WINRT_VERIFY(borderRequiredCheckBoxHwnd);
+    HWND borderRequiredCheckBoxHwnd = controls.CreateControl(ControlType::CheckBox, L"Border required", borderEnableSytle);
 
     // The default state is false for border required checkbox
     SendMessageW(borderRequiredCheckBoxHwnd, BM_SETCHECK, BST_CHECKED, 0);
