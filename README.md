@@ -1,3 +1,6 @@
+# TODO
+1. [ ] 添加控制台
+
 # Win32CaptureSample
 A simple sample using the Windows.Graphics.Capture APIs in a Win32 application.
 
